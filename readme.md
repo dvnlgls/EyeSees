@@ -4,4 +4,4 @@
 
 ## Release Notes
 ### v1.3 (Firefox & Chrome) - 2022-08-29
-- For movie/tv-show names whose lenght is less than 3 characters, IMDb ID will be used for search
+- For movie/tv-show names whose length is less than 3 characters, IMDb ID will be used for search
