@@ -1,5 +1,3 @@
-let searchStr = '';
-
 /*-------------------------------------------------------
  methods
 -------------------------------------------------------*/
@@ -33,66 +31,61 @@ function getSearchURL(domain, searchTerm, mode) {
     return searchUrl;
 }
 
-// receives a message from the content page
-function getSearchStrFromPage(msg) {
-    console.log('msg from page', msg);
-    searchStr = msg;
-}
-
-
 /*-------------------------------------------------------
  event listeners
 -------------------------------------------------------*/
-function sendMessageToTab(tabId, message) {
-    return new Promise((resolve) => {
-        chrome.tabs.sendMessage(tabId, message, resolve)
-    })
-}
 chrome.contextMenus.onClicked.addListener(function (info, tab) {
-    let mode = 'normal';
+    let mode = '';
 
-    (async () => {
-        if (info.menuItemId === "one") {
-            // await chrome.tabs.sendMessage(tab.id, { trigger: 'getSearchStr' });
-            await sendMessageToTab(tab.id, { trigger: 'getSearchStr' })
+    if (info.menuItemId === "one") {
+        //imdb mode
+        
+        // callback hell can be avoided by delegating constructing the search term to the content
+        // page but it's not done for 2 reasons: a) to maintain similarity with FF codebase. 
+        // b) to preserve current single responsibility nature of the content page.
+        // This whole nonsense could be avoided if Chrome manages to fix the promise bug for sendMessage :(
+        
+        chrome.tabs.sendMessage(tab.id, { data: 'getSearchTerm' }, (response) => {
+            const obj = response.data;
 
-            console.log('1st srch term', searchStr);
-
-            if (searchStr.data.title.length <= 2) {
-                // await chrome.tabs.sendMessage(tab.id, { trigger: 'getImdbId' });
-                await sendMessageToTab(tab.id, { trigger: 'getImdbId'})
-
-                searchStr = searchStr.data;
-
-                console.log('2nd srch term', searchStr);
-
-                mode = 'advanced';
+            if (obj.title.length <= 2) {
+                // search term less than 3 char long
+                chrome.tabs.sendMessage(tab.id, { data: 'getImdbId' }, (response) => {
+                    const id = response.data;
+                    mode = 'advanced';
+                    openUrl(id, mode, tab);
+                });
             } else {
-                // normal mode. i.e.: name is long enough to perform a normal search.
-                const { title, year } = searchStr.data;
+                let searchStr = '';
+                mode = 'normal';
+
+                const { title, year } = obj;
                 if (title) {
                     searchStr = title.trim().replaceAll(' ', '+');
                 }
                 if (year) {
                     searchStr += '+' + year.trim();
                 }
+                openUrl(searchStr, mode, tab)
             }
-        }
-        else if (info.menuItemId === "two") {
-            searchStr = getSelectedText(info);
-        }
-
-        if (searchStr !== '') {
-            chrome.storage.local.get('site', (res) => {
-                const url = getSearchURL(res.site, searchStr, mode);
-                console.log('url', url);
-                openUrlToTheRight(url, tab);
-            })
-        }
-    })();
+        });
+    }
+    else if (info.menuItemId === "two") {
+        // text selection mode
+        let searchStr = getSelectedText(info);
+        let mode = 'normal';
+        openUrl(searchStr, mode, tab)
+    }
 });
 
-chrome.runtime.onMessage.addListener(getSearchStrFromPage);
+function openUrl(searchStr, mode, tab) {
+    chrome.storage.local.get('site', (res) => {
+        if(!searchStr) return;
+
+        const url = getSearchURL(res.site, searchStr, mode);
+        openUrlToTheRight(url, tab);
+    })
+}
 
 /*-------------------------------------------------------
  menus

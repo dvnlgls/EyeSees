@@ -44,19 +44,17 @@ function getIMDBID() {
   return imdbId;
 }
 
-chrome.runtime.onMessage.addListener(({ trigger }) => {
-  let searchStr;
-  console.log('trigger', trigger);
+chrome.runtime.onMessage.addListener(
+  (request, sender, sendResponse) => {
+    let payload;
 
-  if (trigger === 'getSearchStr') {
-    searchStr = getSearchStr();
-  }
-  else if (trigger === 'getImdbId') {
-    searchStr = getIMDBID();
-  }
+    if (request.data === "getSearchTerm") {
+      payload = getSearchStr();
+    } else if (request.data === 'getImdbId') {
+      payload = getIMDBID();
+    }
 
-  const response = { data: searchStr }
-  sendSearchStr(response);
-  
-  return true;
-});
+    const response = { data: payload }
+    sendResponse(response);
+  }
+);
