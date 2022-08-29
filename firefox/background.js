@@ -20,11 +20,9 @@ function openUrlToTheRight(url, currentTab) {
     createTab.then();
 }
 
-// receives a message (search string) from the content page
-function setSearchStrFromPage(msg) {
-    if (msg) {
-        searchStr = msg.searchStr;
-    } else searchStr = '';
+// receives a message from the content page
+function getSearchStrFromPage(msg) {
+    searchStr = msg;
 }
 
 // returns a promise
@@ -33,12 +31,42 @@ function getSiteFromConfig() {
     return storedSite;
 }
 
+function getSearchURL(domain, searchTerm, mode) {
+    if (!searchTerm || !domain) return;
+
+    let searchUrl = '';
+    if (mode === 'advanced') {
+        searchUrl = 'https://' + domain + '/search.php?keywords=' + searchTerm + '&terms=all&author=&sc=1&sf=all&sr=topics&sk=t&sd=d&st=0&ch=300&t=0&submit=Search';
+    } else if (mode === 'normal') {
+        searchUrl = 'https://' + domain + '/search.php?keywords=' + searchTerm + '&sf=titleonly';
+    }
+
+    return searchUrl;
+}
+
 /*-------------------------------------------------------
  event listeners
 -------------------------------------------------------*/
 browser.menus.onClicked.addListener(async function (info, tab) {
+    let mode = 'normal';
+
     if (info.menuItemId === "one") {
         await browser.tabs.sendMessage(tab.id, { trigger: 'getSearchStr' });
+
+        if (searchStr.data.title.length <= 2) {
+            await browser.tabs.sendMessage(tab.id, { trigger: 'getImdbId' });
+            searchStr = searchStr.data;
+            mode = 'advanced';
+        } else {
+            // normal mode. i.e.: name is long enough to perform a normal search.
+            const { title, year } = searchStr.data;
+            if (title) {
+                searchStr = title.trim().replaceAll(' ', '+');
+            }
+            if (year) {
+                searchStr += '+' + year.trim();
+            }
+        }
     }
     else if (info.menuItemId === "two") {
         searchStr = getSelectedText(info);
@@ -46,13 +74,13 @@ browser.menus.onClicked.addListener(async function (info, tab) {
 
     if (searchStr !== '') {
         getSiteFromConfig().then((res) => {
-            const url = 'https://' + res.site + '/search.php?keywords=' + searchStr + '&sf=titleonly';
+            const url = getSearchURL(res.site, searchStr, mode);
             openUrlToTheRight(url, tab);
         })
     }
 });
 
-browser.runtime.onMessage.addListener(setSearchStrFromPage);
+browser.runtime.onMessage.addListener(getSearchStrFromPage);
 
 /*-------------------------------------------------------
  menus

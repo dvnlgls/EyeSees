@@ -30,24 +30,33 @@ function getYear() {
 function getSearchStr() {
   const title = getTtile();
   const year = getYear();
-  let searchStr = '';
+  let searchStr = { title, year };
 
-  if (title) {
-    searchStr = title.trim().replaceAll(' ', '+');
-  }
-  if (year) {
-    searchStr += '+' + year.trim();
-  }
   return searchStr;
 }
 
-function sendSearchStr() {
-  const searchStr = getSearchStr();
-  chrome.runtime.sendMessage({ "searchStr": searchStr });
+function sendSearchStr(searchStr) {
+  chrome.runtime.sendMessage(searchStr);
+}
+
+function getIMDBID() {
+  const imdbId = document.querySelector('meta[property="imdb:pageConst"][content]').content || '';
+  return imdbId;
 }
 
 chrome.runtime.onMessage.addListener(({ trigger }) => {
+  let searchStr;
+  console.log('trigger', trigger);
+
   if (trigger === 'getSearchStr') {
-    sendSearchStr();
+    searchStr = getSearchStr();
   }
+  else if (trigger === 'getImdbId') {
+    searchStr = getIMDBID();
+  }
+
+  const response = { data: searchStr }
+  sendSearchStr(response);
+  
+  return true;
 });

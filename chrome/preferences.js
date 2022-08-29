@@ -1,14 +1,12 @@
 
 function storeConfig() {
   const siteVal = document.querySelector("#site").value.trim();
-  const storeSite = chrome.storage.local.set({ site: siteVal });
-  storeSite.then();
+  chrome.storage.local.set({ site: siteVal });
 }
 
 
 function restoreConfig() {
-  const storedSite = chrome.storage.local.get('site');
-  storedSite.then((res) => {
+  chrome.storage.local.get('site', (res) => {
     document.querySelector("#site").value = res.site || '';
   });
 }
