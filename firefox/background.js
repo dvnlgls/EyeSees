@@ -60,6 +60,8 @@ browser.menus.onClicked.addListener(async function (info, tab) {
         } else {
             // normal mode. i.e.: name is long enough to perform a normal search.
             const { title, year } = searchStr.data;
+            // test for url breaking symbols https://stackoverflow.com/a/66765539/336431
+            
             if (title) {
                 searchStr = title.trim().replaceAll(' ', '+');
             }
