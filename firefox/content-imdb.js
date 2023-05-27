@@ -10,18 +10,21 @@ function getTtile() {
   }
 }
 
-// drop year
+// drop year?
+// bug: will fail for titles like https://www.imdb.com/title/tt0156887/?ref_=tt_sims_tt_i_2. Target next ul
 function getYear() {
   const element = document.querySelectorAll("[data-testid='hero__pageTitle']")[0];
   let year;
   try {
-    year = element.nextSibling.childNodes[1].innerText;
-
-    if (element.nextSibling.firstChild.innerText  === 'TV Series') {
+    if (element.nextSibling.firstChild.innerText === 'TV Series') {
+      year = element.nextSibling.childNodes[1].innerText;
       // check if year is a range, like 2010-2015
       if (year.lastIndexOf('–') !== -1) {
         year = year.split('–')[0];
       }
+    } else {
+      // movie page
+      year = element.nextSibling.childNodes[0].innerText;
     }
     return year;
   } catch (e) {

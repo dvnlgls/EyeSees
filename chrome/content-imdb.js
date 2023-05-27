@@ -1,25 +1,28 @@
 function getTtile() {
-  const element = document.querySelectorAll("[data-testid='hero-title-block__title']")[0];
-  if (element) {
-    return element.innerText;
-  } else {
+  //hero__pageTitle
+  try {
+    const element = document.querySelectorAll("[data-testid='hero__pageTitle']")[0];
+    const title = element.getElementsByTagName('span')[0].innerText;
+    return title;
+  } catch (error) {
+    console.log('EyeSees: Possible DOM change. Check title retrieval logic.')
     return null;
   }
 }
 
 function getYear() {
-  const element = document.querySelectorAll("[data-testid='hero-title-block__metadata']")[0];
+  const element = document.querySelectorAll("[data-testid='hero__pageTitle']")[0];
   let year;
   try {
-    if (element.firstChild.innerText === 'TV Series') {
-      year = element.childNodes[1].firstChild.innerText;
+    if (element.nextSibling.firstChild.innerText === 'TV Series') {
+      year = element.nextSibling.childNodes[1].innerText;
       // check if year is a range, like 2010-2015
       if (year.lastIndexOf('–') !== -1) {
         year = year.split('–')[0];
       }
     } else {
       // movie page
-      year = element.firstChild.firstChild.innerText;
+      year = element.nextSibling.childNodes[0].innerText;
     }
     return year;
   } catch (e) {
